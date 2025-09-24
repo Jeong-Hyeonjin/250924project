@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   CameraIcon, 
   PhotoIcon,
@@ -74,6 +76,8 @@ interface ErrorInfo {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { user, loading, signOut } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedMeal, setSelectedMeal] = useState<string>("전체");
   const [uploadState, setUploadState] = useState<UploadState>("idle");
@@ -101,6 +105,13 @@ export default function DashboardPage() {
     : foodLogs.filter(log => log.mealType === selectedMeal);
 
   const todayTotalCalories = foodLogs.reduce((sum, log) => sum + log.totalCalories, 0);
+
+  // 인증 확인 및 리다이렉트
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   // 컴포넌트 언마운트 시 타이머 정리
   useEffect(() => {
@@ -148,7 +159,7 @@ export default function DashboardPage() {
       // FormData 생성
       const formData = new FormData();
       formData.append('image', file);
-      formData.append('userId', 'demo-user'); // 임시 사용자 ID
+      formData.append('userId', user?.id || 'anonymous'); // 실제 사용자 ID
 
       // API 호출
       const response = await fetch('/api/upload-food', {
@@ -235,6 +246,26 @@ export default function DashboardPage() {
     fileInputRef.current?.click();
   };
 
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (!error) {
+      router.push('/login');
+    }
+  };
+
+  // 로딩 중이거나 인증되지 않은 사용자 처리
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // useEffect에서 리다이렉트 처리
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -242,21 +273,26 @@ export default function DashboardPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => window.location.href = '/'}
-                className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
-              >
-                <ChartBarIcon className="w-5 h-5 text-white" />
-              </button>
+              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <span className="text-white text-sm font-bold">🍽️</span>
+              </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">나의 식단</h1>
                 <p className="text-sm text-gray-500">오늘 {todayTotalCalories}kcal</p>
               </div>
             </div>
-            <Button variant="outline" size="sm">
-              <CalendarDaysIcon className="w-4 h-4 mr-2" />
-              {selectedDate}
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button variant="outline" size="sm">
+                <CalendarDaysIcon className="w-4 h-4 mr-2" />
+                {selectedDate}
+              </Button>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-600">{user.email}</span>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  로그아웃
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </header>

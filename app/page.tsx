@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   CameraIcon, 
   SparklesIcon, 
@@ -14,16 +16,18 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    // 로그인 후 대시보드로 이동
-    window.location.href = '/dashboard';
-  };
+  // 로그인된 사용자는 대시보드로 리다이렉트
+  useEffect(() => {
+    if (user && !loading) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
+  const handleGetStarted = () => {
+    router.push('/login');
   };
 
   return (
@@ -39,15 +43,15 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-gray-900">FoodSnap AI</span>
             </div>
             <div className="flex items-center space-x-4">
-              {isLoggedIn ? (
+              {user ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-600">안녕하세요! 👋</span>
-                  <Button onClick={handleLogout} variant="outline" size="sm">
-                    로그아웃
+                  <Button onClick={() => router.push('/dashboard')} variant="outline" size="sm">
+                    대시보드
                   </Button>
                 </div>
               ) : (
-                <Button onClick={handleLogin} variant="outline" size="sm">
+                <Button onClick={handleGetStarted} variant="outline" size="sm">
                   로그인
                 </Button>
               )}
@@ -86,7 +90,7 @@ export default function LandingPage() {
                 <Button 
                   size="xl" 
                   className="w-full sm:w-auto"
-                  onClick={() => window.location.href = '/dashboard'}
+                  onClick={handleGetStarted}
                 >
                   <CameraIcon className="w-5 h-5 mr-2" />
                   지금 시작하기
@@ -95,7 +99,7 @@ export default function LandingPage() {
                   variant="outline" 
                   size="xl" 
                   className="w-full sm:w-auto"
-                  onClick={() => window.location.href = '/dashboard'}
+                  onClick={handleGetStarted}
                 >
                   데모 보기
                   <ArrowRightIcon className="w-4 h-4 ml-2" />
@@ -233,14 +237,14 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button 
                 size="xl" 
-                className="w-full sm:w-auto bg-white text-emerald-600 hover:bg-gray-50"
-                onClick={() => window.location.href = '/dashboard'}
+                variant="outline"
+                className="w-full sm:w-auto bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white border-2 border-emerald-600 shadow-lg font-semibold transition-colors duration-200"
+                onClick={handleGetStarted}
               >
-                <CameraIcon className="w-5 h-5 mr-2" />
                 무료로 시작하기
               </Button>
               <p className="text-sm text-emerald-100">
-                회원가입 없이 바로 체험 가능
+                간편한 이메일 가입으로 시작
               </p>
             </div>
           </motion.div>
