@@ -76,72 +76,58 @@
   - - **성공 시** 응답 본문 예시 (사진에 밥, 김치찌개, 계란말이가 있는 경우):
     ```json
     {
-    "success": true,
-    "data": {
-        "items": [
-        {
-            "foodName": "현미밥",
-            "confidence": 0.98,
-            "quantity": "1 공기 (210g)",
-            "calories": 310,
-            "nutrients": {
-            "carbohydrates": { "value": 68.5, "unit": "g" },
-            "protein": { "value": 6.2, "unit": "g" },
-            "fat": { "value": 1.5, "unit": "g" },
-            "sugars": { "value": 0.5, "unit": "g" },
-            "sodium": { "value": 8.0, "unit": "mg" },
-            "vitamins": { "value": 0.1, "unit": "mg" },
-            "minerals": { "value": 0.5, "unit": "mg" },
-            "fiber": { "value": 3.0, "unit": "g" },
-            "water": { "value": 140.0, "unit": "g" }
+        "success": true,
+        "data": {
+            "items": [
+            {
+                "foodName": "현미밥",
+                "confidence": 0.98,
+                "quantity": "1 공기 (210g)",
+                "calories": 310,
+                "nutrients": {
+                    "carbohydrates": { "value": 68.5, "unit": "g" },
+                    "protein": { "value": 6.2, "unit": "g" },
+                    "fat": { "value": 1.5, "unit": "g" },
+                    "vitamins": { "value": 0.1, "unit": "mg" },
+                    "minerals": { "value": 0.5, "unit": "mg" }
+                }
+            },
+            {
+                "foodName": "김치찌개",
+                "confidence": 0.92,
+                "quantity": "1 인분 (400g)",
+                "calories": 450,
+                "nutrients": {
+                    "carbohydrates": { "value": 15.2, "unit": "g" },
+                    "protein": { "value": 25.1, "unit": "g" },
+                    "fat": { "value": 28.3, "unit": "g" },
+                    "vitamins": { "value": 2.5, "unit": "mg" },
+                    "minerals": { "value": 1.2, "unit": "mg" }
+                }
+            },
+            {
+                "foodName": "계란말이",
+                "confidence": 0.95,
+                "quantity": "1 접시 (150g)",
+                "calories": 280,
+                "nutrients": {
+                    "carbohydrates": { "value": 3.1, "unit": "g" },
+                    "protein": { "value": 20.5, "unit": "g" },
+                    "fat": { "value": 20.1, "unit": "g" },
+                    "vitamins": { "value": 0.8, "unit": "mg" },
+                    "minerals": { "value": 0.7, "unit": "mg" }
+                }
             }
-        },
-        {
-            "foodName": "김치찌개",
-            "confidence": 0.92,
-            "quantity": "1 인분 (400g)",
-            "calories": 450,
-            "nutrients": {
-            "carbohydrates": { "value": 15.2, "unit": "g" },
-            "protein": { "value": 25.1, "unit": "g" },
-            "fat": { "value": 28.3, "unit": "g" },
-            "sugars": { "value": 7.8, "unit": "g" },
-            "sodium": { "value": 1800.0, "unit": "mg" },
-            "vitamins": { "value": 2.5, "unit": "mg" },
-            "minerals": { "value": 1.2, "unit": "mg" },
-            "fiber": { "value": 4.5, "unit": "g" },
-            "water": { "value": 300.0, "unit": "g" }
-            }
-        },
-        {
-            "foodName": "계란말이",
-            "confidence": 0.95,
-            "quantity": "1 접시 (150g)",
-            "calories": 280,
-            "nutrients": {
-            "carbohydrates": { "value": 3.1, "unit": "g" },
-            "protein": { "value": 20.5, "unit": "g" },
-            "fat": { "value": 20.1, "unit": "g" },
-            "sugars": { "value": 1.5, "unit": "g" },
-            "sodium": { "value": 450.0, "unit": "mg" },
-            "vitamins": { "value": 0.8, "unit": "mg" },
-            "minerals": { "value": 0.7, "unit": "mg" },
-            "fiber": { "value": 0.5, "unit": "g" },
-            "water": { "value": 80.0, "unit": "g" }
+            ],
+            "summary": {
+                "totalCalories": 1040,
+                "totalCarbohydrates": { "value": 86.8, "unit": "g" },
+                "totalProtein": { "value": 51.8, "unit": "g" },
+                "totalFat": { "value": 49.9, "unit": "g" },
+                "totalVitamins": { "value": 3.4, "unit": "mg" },
+                "totalMinerals": { "value": 2.4, "unit": "mg" }
             }
         }
-        ],
-        "summary": {
-        "totalCalories": 1040,
-        "totalCarbohydrates": { "value": 86.8, "unit": "g" },
-        "totalProtein": { "value": 51.8, "unit": "g" },
-        "totalFat": { "value": 49.9, "unit": "g" },
-        "totalVitamins": { "value": 3.4, "unit": "mg" },
-        "totalMinerals": { "value": 2.4, "unit": "mg" },
-        "totalFiber": { "value": 8.0, "unit": "g" },
-        "totalWater": { "value": 520.0, "unit": "g" }
-        }
-    }
     }
     ```
   - **실패 시** 응답 본문 예시:

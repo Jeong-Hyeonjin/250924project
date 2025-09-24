@@ -23,8 +23,16 @@ import { Button } from "@/components/ui/button";
 // 타입 정의
 interface FoodItem {
   foodName: string;
+  confidence: number;
   quantity: string;
   calories: number;
+  nutrients: {
+    carbohydrates?: NutrientValue;
+    protein?: NutrientValue;
+    fat?: NutrientValue;
+    vitamins?: NutrientValue;
+    minerals?: NutrientValue;
+  };
 }
 
 interface NutrientValue {
@@ -33,16 +41,14 @@ interface NutrientValue {
 }
 
 interface AnalysisResult {
+  items?: FoodItem[];
   summary: {
     totalCalories: number;
     totalCarbohydrates?: NutrientValue;
     totalProtein?: NutrientValue;
     totalFat?: NutrientValue;
-    totalSodium?: NutrientValue;
-    totalPotassium?: NutrientValue;
-    totalVitaminC?: NutrientValue;
-    totalCalcium?: NutrientValue;
-    totalIron?: NutrientValue;
+    totalVitamins?: NutrientValue;
+    totalMinerals?: NutrientValue;
   };
 }
 
@@ -455,8 +461,8 @@ export default function DashboardPage() {
                       <div className="border-t border-gray-100 pt-3">
                         <h4 className="text-xs font-medium text-gray-600 mb-3">5대 영양소</h4>
                         
-                        {/* 3대 영양소 */}
-                        <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+                        {/* 5대 영양소 한 줄 표시 */}
+                        <div className="grid grid-cols-5 gap-1 text-xs">
                           <div className="text-center">
                             <div className="font-medium text-blue-600">
                               {Math.round(log.analysisResult.summary.totalCarbohydrates?.value || 0)}
@@ -478,52 +484,19 @@ export default function DashboardPage() {
                             </div>
                             <div className="text-gray-500">지방</div>
                           </div>
-                        </div>
-
-                        {/* 비타민 & 무기질 */}
-                        <div className="border-t border-gray-50 pt-2">
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                            {/* 비타민 */}
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">비타민C</span>
-                              <span className="font-medium text-orange-600">
-                                {Math.round(log.analysisResult.summary.totalVitaminC?.value || 0)}
-                                {log.analysisResult.summary.totalVitaminC?.unit || 'mg'}
-                              </span>
+                          <div className="text-center">
+                            <div className="font-medium text-orange-600">
+                              {(log.analysisResult.summary.totalVitamins?.value || 0).toFixed(1)}
+                              {log.analysisResult.summary.totalVitamins?.unit || 'mg'}
                             </div>
-                            
-                            {/* 무기질 */}
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">나트륨</span>
-                              <span className="font-medium text-red-600">
-                                {Math.round(log.analysisResult.summary.totalSodium?.value || 0)}
-                                {log.analysisResult.summary.totalSodium?.unit || 'mg'}
-                              </span>
+                            <div className="text-gray-500">비타민</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-purple-600">
+                              {(log.analysisResult.summary.totalMinerals?.value || 0).toFixed(1)}
+                              {log.analysisResult.summary.totalMinerals?.unit || 'mg'}
                             </div>
-                            
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">칼슘</span>
-                              <span className="font-medium text-purple-600">
-                                {Math.round(log.analysisResult.summary.totalCalcium?.value || 0)}
-                                {log.analysisResult.summary.totalCalcium?.unit || 'mg'}
-                              </span>
-                            </div>
-                            
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">철분</span>
-                              <span className="font-medium text-gray-700">
-                                {(log.analysisResult.summary.totalIron?.value || 0).toFixed(1)}
-                                {log.analysisResult.summary.totalIron?.unit || 'mg'}
-                              </span>
-                            </div>
-                            
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">칼륨</span>
-                              <span className="font-medium text-indigo-600">
-                                {Math.round(log.analysisResult.summary.totalPotassium?.value || 0)}
-                                {log.analysisResult.summary.totalPotassium?.unit || 'mg'}
-                              </span>
-                            </div>
+                            <div className="text-gray-500">무기질</div>
                           </div>
                         </div>
                       </div>
@@ -585,17 +558,13 @@ export default function DashboardPage() {
                   acc.carbs += summary.totalCarbohydrates?.value || 0;
                   acc.protein += summary.totalProtein?.value || 0;
                   acc.fat += summary.totalFat?.value || 0;
-                  acc.sodium += summary.totalSodium?.value || 0;
-                  acc.calcium += summary.totalCalcium?.value || 0;
-                  acc.iron += summary.totalIron?.value || 0;
-                  acc.potassium += summary.totalPotassium?.value || 0;
-                  acc.vitaminC += summary.totalVitaminC?.value || 0;
+                  acc.vitamins += summary.totalVitamins?.value || 0;
+                  acc.minerals += summary.totalMinerals?.value || 0;
                 }
                 return acc;
               }, { 
-                carbs: 0, protein: 0, fat: 0, 
-                sodium: 0, calcium: 0, iron: 0, 
-                potassium: 0, vitaminC: 0 
+                carbs: 0, protein: 0, fat: 0,
+                vitamins: 0, minerals: 0
               });
 
               // 식단 기록이 있으면 영양소 요약을 항상 표시 (0이어도)
@@ -603,8 +572,8 @@ export default function DashboardPage() {
                 <div className="border-t border-emerald-200 pt-4">
                   <h4 className="text-sm font-medium text-emerald-800 mb-3">5대 영양소 합계</h4>
                   
-                  {/* 3대 영양소 */}
-                  <div className="grid grid-cols-3 gap-3 mb-4">
+                  {/* 5대 영양소 한 줄 표시 */}
+                  <div className="grid grid-cols-5 gap-2">
                     <div className="bg-white rounded-lg p-3 text-center">
                       <div className="text-lg font-bold text-blue-600">
                         {Math.round(totalNutrients.carbs)}g
@@ -623,42 +592,17 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-xs text-gray-600">지방</div>
                     </div>
-                  </div>
-
-                  {/* 비타민 & 무기질 */}
-                  <div className="bg-white rounded-lg p-3">
-                    <h5 className="text-xs font-medium text-gray-700 mb-2">비타민 & 무기질</h5>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">비타민C</span>
-                        <span className="font-medium text-orange-600">
-                          {Math.round(totalNutrients.vitaminC)}mg
-                        </span>
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <div className="text-lg font-bold text-orange-600">
+                        {totalNutrients.vitamins.toFixed(1)}mg
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">나트륨</span>
-                        <span className="font-medium text-red-600">
-                          {Math.round(totalNutrients.sodium)}mg
-                        </span>
+                      <div className="text-xs text-gray-600">비타민</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <div className="text-lg font-bold text-purple-600">
+                        {totalNutrients.minerals.toFixed(1)}mg
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">칼슘</span>
-                        <span className="font-medium text-purple-600">
-                          {Math.round(totalNutrients.calcium)}mg
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">철분</span>
-                        <span className="font-medium text-gray-700">
-                          {totalNutrients.iron.toFixed(1)}mg
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">칼륨</span>
-                        <span className="font-medium text-indigo-600">
-                          {Math.round(totalNutrients.potassium)}mg
-                        </span>
-                      </div>
+                      <div className="text-xs text-gray-600">무기질</div>
                     </div>
                   </div>
                 </div>
