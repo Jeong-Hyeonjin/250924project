@@ -76,66 +76,81 @@
   - - **성공 시** 응답 본문 예시 (사진에 밥, 김치찌개, 계란말이가 있는 경우):
     ```json
     {
-      "success": true,
-      "data": {
+    "success": true,
+    "data": {
         "items": [
-          {
+        {
             "foodName": "현미밥",
-            "confidence": 0.98, // AI의 분석 신뢰도 (0.0 ~ 1.0)
-            "quantity": "1 공기 (210g)", // AI가 추정한 양
+            "confidence": 0.98,
+            "quantity": "1 공기 (210g)",
             "calories": 310,
             "nutrients": {
-              "carbohydrates": { "value": 68.5, "unit": "g" },
-              "protein": { "value": 6.2, "unit": "g" },
-              "fat": { "value": 1.5, "unit": "g" },
-              "sugars": { "value": 0.5, "unit": "g" },
-              "sodium": { "value": 8.0, "unit": "mg" }
+            "carbohydrates": { "value": 68.5, "unit": "g" },
+            "protein": { "value": 6.2, "unit": "g" },
+            "fat": { "value": 1.5, "unit": "g" },
+            "sugars": { "value": 0.5, "unit": "g" },
+            "sodium": { "value": 8.0, "unit": "mg" },
+            "vitamins": { "value": 0.1, "unit": "mg" },
+            "minerals": { "value": 0.5, "unit": "mg" },
+            "fiber": { "value": 3.0, "unit": "g" },
+            "water": { "value": 140.0, "unit": "g" }
             }
-          },
-          {
+        },
+        {
             "foodName": "김치찌개",
             "confidence": 0.92,
             "quantity": "1 인분 (400g)",
             "calories": 450,
             "nutrients": {
-              "carbohydrates": { "value": 15.2, "unit": "g" },
-              "protein": { "value": 25.1, "unit": "g" },
-              "fat": { "value": 28.3, "unit": "g" },
-              "sugars": { "value": 7.8, "unit": "g" },
-              "sodium": { "value": 1800.0, "unit": "mg" }
+            "carbohydrates": { "value": 15.2, "unit": "g" },
+            "protein": { "value": 25.1, "unit": "g" },
+            "fat": { "value": 28.3, "unit": "g" },
+            "sugars": { "value": 7.8, "unit": "g" },
+            "sodium": { "value": 1800.0, "unit": "mg" },
+            "vitamins": { "value": 2.5, "unit": "mg" },
+            "minerals": { "value": 1.2, "unit": "mg" },
+            "fiber": { "value": 4.5, "unit": "g" },
+            "water": { "value": 300.0, "unit": "g" }
             }
-          },
-          {
+        },
+        {
             "foodName": "계란말이",
             "confidence": 0.95,
             "quantity": "1 접시 (150g)",
             "calories": 280,
             "nutrients": {
-              "carbohydrates": { "value": 3.1, "unit": "g" },
-              "protein": { "value": 20.5, "unit": "g" },
-              "fat": { "value": 20.1, "unit": "g" },
-              "sugars": { "value": 1.5, "unit": "g" },
-              "sodium": { "value": 450.0, "unit": "mg" }
+            "carbohydrates": { "value": 3.1, "unit": "g" },
+            "protein": { "value": 20.5, "unit": "g" },
+            "fat": { "value": 20.1, "unit": "g" },
+            "sugars": { "value": 1.5, "unit": "g" },
+            "sodium": { "value": 450.0, "unit": "mg" },
+            "vitamins": { "value": 0.8, "unit": "mg" },
+            "minerals": { "value": 0.7, "unit": "mg" },
+            "fiber": { "value": 0.5, "unit": "g" },
+            "water": { "value": 80.0, "unit": "g" }
             }
-          }
+        }
         ],
         "summary": {
-          // 프론트엔드 계산 부담을 덜어주기 위한 전체 요약 정보
-          "totalCalories": 1040,
-          "totalCarbohydrates": { "value": 86.8, "unit": "g" },
-          "totalProtein": { "value": 51.8, "unit": "g" },
-          "totalFat": { "value": 49.9, "unit": "g" }
+        "totalCalories": 1040,
+        "totalCarbohydrates": { "value": 86.8, "unit": "g" },
+        "totalProtein": { "value": 51.8, "unit": "g" },
+        "totalFat": { "value": 49.9, "unit": "g" },
+        "totalVitamins": { "value": 3.4, "unit": "mg" },
+        "totalMinerals": { "value": 2.4, "unit": "mg" },
+        "totalFiber": { "value": 8.0, "unit": "g" },
+        "totalWater": { "value": 520.0, "unit": "g" }
         }
-      }
+    }
     }
     ```
   - **실패 시** 응답 본문 예시:
-    `json
-{
-  "success": false,
-  "error": {
-    "code": "NO_FOOD_DETECTED", // 에러 종류를 나타내는 코드
-    "message": "이미지에서 음식을 찾을 수 없습니다. 다른 사진으로 시도해주세요." // 사용자에게 보여줄 수 있는 메시지
-  }
-}
-`
+    ```json
+    {
+        "success": false,
+        "error": {
+            "code": "NO_FOOD_DETECTED", // 에러 종류를 나타내는 코드
+            "message": "이미지에서 음식을 찾을 수 없습니다. 다른 사진으로 시도해주세요." // 사용자에게 보여줄 수 있는 메시지
+        }
+    }
+```

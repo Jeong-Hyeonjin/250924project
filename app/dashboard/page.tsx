@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CameraIcon, 
@@ -20,44 +20,63 @@ import {
 } from "@heroicons/react/24/solid";
 import { Button } from "@/components/ui/button";
 
-// Mock data for demonstration
-const mockFoodLogs = [
-  {
-    id: "1",
-    imageUrl: "/api/placeholder/400/300",
-    mealType: "아침",
-    items: [
-      { foodName: "현미밥", quantity: "1 공기", calories: 310 },
-      { foodName: "된장찌개", quantity: "1 그릇", calories: 120 },
-      { foodName: "김치", quantity: "1 접시", calories: 25 }
-    ],
-    totalCalories: 455,
-    loggedAt: "2024-09-24T07:30:00Z",
-    createdAt: "2024-09-24T07:30:00Z"
-  },
-  {
-    id: "2", 
-    imageUrl: "/api/placeholder/400/300",
-    mealType: "점심",
-    items: [
-      { foodName: "불고기", quantity: "1 인분", calories: 520 },
-      { foodName: "쌀밥", quantity: "1 공기", calories: 290 },
-      { foodName: "샐러드", quantity: "1 접시", calories: 85 }
-    ],
-    totalCalories: 895,
-    loggedAt: "2024-09-24T12:15:00Z", 
-    createdAt: "2024-09-24T12:15:00Z"
-  }
-];
+// 타입 정의
+interface FoodItem {
+  foodName: string;
+  quantity: string;
+  calories: number;
+}
+
+interface NutrientValue {
+  value: number;
+  unit: string;
+}
+
+interface AnalysisResult {
+  summary: {
+    totalCalories: number;
+    totalCarbohydrates?: NutrientValue;
+    totalProtein?: NutrientValue;
+    totalFat?: NutrientValue;
+    totalSodium?: NutrientValue;
+    totalPotassium?: NutrientValue;
+    totalVitaminC?: NutrientValue;
+    totalCalcium?: NutrientValue;
+    totalIron?: NutrientValue;
+  };
+}
+
+interface FoodLog {
+  id: string;
+  imageUrl: string;
+  mealType: string;
+  items: FoodItem[];
+  totalCalories: number;
+  loggedAt: string;
+  createdAt: string;
+  analysisResult?: AnalysisResult;
+}
+
+// 빈 배열로 시작 - 실제 분석 결과만 표시
+const initialFoodLogs: FoodLog[] = [];
 
 type UploadState = "idle" | "uploading" | "analyzing" | "success" | "error";
+
+interface ErrorInfo {
+  code?: string;
+  message?: string;
+}
 
 export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedMeal, setSelectedMeal] = useState<string>("전체");
   const [uploadState, setUploadState] = useState<UploadState>("idle");
-  const [foodLogs, setFoodLogs] = useState(mockFoodLogs);
+  const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
+  const [foodLogs, setFoodLogs] = useState(initialFoodLogs);
+  const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const mealTypes = ["전체", "아침", "점심", "저녁", "간식"];
   
@@ -77,19 +96,71 @@ export default function DashboardPage() {
 
   const todayTotalCalories = foodLogs.reduce((sum, log) => sum + log.totalCalories, 0);
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  // 타이머 시작 함수
+  const startTimer = () => {
+    const startTime = Date.now();
+    setAnalysisStartTime(startTime);
+    setElapsedTime(0);
+    
+    timerRef.current = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      setElapsedTime(elapsed);
+    }, 1000);
+  };
+
+  // 타이머 정지 함수
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setAnalysisStartTime(null);
+    setElapsedTime(0);
+  };
+
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Simulate upload and analysis process
-    setUploadState("uploading");
-    
-    setTimeout(() => {
-      setUploadState("analyzing");
-    }, 1000);
+    // 초기화
+    stopTimer();
 
-    setTimeout(() => {
-      // Mock successful analysis result
+    // 업로드 상태 시작
+    setUploadState("uploading");
+
+    try {
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('userId', 'demo-user'); // 임시 사용자 ID
+
+      // API 호출
+      const response = await fetch('/api/upload-food', {
+        method: 'POST',
+        body: formData,
+      });
+
+      // 분석 상태로 변경
+      setUploadState("analyzing");
+      startTimer();
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error?.message || '분석에 실패했습니다.');
+      }
+
+      // 성공적으로 분석 완료
       const now = new Date();
       const currentHour = now.getHours();
       let mealType = "간식";
@@ -98,30 +169,59 @@ export default function DashboardPage() {
       else if (currentHour >= 11 && currentHour < 17) mealType = "점심";  
       else if (currentHour >= 17 && currentHour < 22) mealType = "저녁";
 
+      // n8n 분석 결과를 사용하여 새 로그 생성
+      const analysisData = result.data;
+      console.log('분석 데이터:', analysisData);
+      
       const newLog = {
         id: Date.now().toString(),
         imageUrl: URL.createObjectURL(file),
         mealType,
-        items: [
-          { foodName: "분석된 음식", quantity: "1 인분", calories: 450 }
+        items: analysisData.items || [
+          { 
+            foodName: analysisData.foodName || "분석된 음식", 
+            quantity: analysisData.quantity || "1 인분", 
+            calories: analysisData.calories || 0 
+          }
         ],
-        totalCalories: 450,
+        totalCalories: analysisData.summary?.totalCalories || analysisData.totalCalories || 0,
         loggedAt: now.toISOString(),
-        createdAt: now.toISOString()
+        createdAt: now.toISOString(),
+        analysisResult: analysisData
       };
 
       setFoodLogs(prev => [newLog, ...prev]);
       setUploadState("success");
+      stopTimer();
       
-      // Reset after 2 seconds
+      // 2초 후 초기 상태로 복귀
       setTimeout(() => {
         setUploadState("idle");
       }, 2000);
-    }, 3000);
 
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    } catch (error) {
+      console.error('이미지 업로드 오류:', error);
+      stopTimer();
+      
+      // 에러 정보 설정
+      if (error instanceof Error) {
+        setErrorInfo({ message: error.message });
+      } else {
+        setErrorInfo({ message: '알 수 없는 오류가 발생했습니다.' });
+      }
+      
+      setUploadState("error");
+      
+      // 5초 후 초기 상태로 복귀
+      setTimeout(() => {
+        setUploadState("idle");
+        setErrorInfo(null);
+      }, 5000);
+    } finally {
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -204,7 +304,7 @@ export default function DashboardPage() {
                     >
                       <PhotoIcon className="w-8 h-8" />
                     </motion.div>
-                    <span>이미지 업로드 중...</span>
+                    <span>식단 분석 중...</span>
                   </motion.div>
                 )}
 
@@ -222,8 +322,12 @@ export default function DashboardPage() {
                     >
                       <ChartBarIcon className="w-8 h-8" />
                     </motion.div>
-                    <span>AI 분석 중...</span>
-                    <span className="text-sm opacity-75">음식을 인식하고 영양성분을 분석합니다</span>
+                    <span>식단 분석 중...</span>
+                    
+                    {/* 타이머만 유지 */}
+                    <div className="text-xs text-emerald-600 font-medium">
+                      {Math.floor(elapsedTime / 60)}:{String(elapsedTime % 60).padStart(2, '0')}
+                    </div>
                   </motion.div>
                 )}
 
@@ -248,9 +352,11 @@ export default function DashboardPage() {
                     exit={{ opacity: 0 }}
                     className="flex flex-col items-center space-y-2"
                   >
-                    <ExclamationTriangleIcon className="w-8 h-8" />
-                    <span>오류가 발생했습니다</span>
-                    <span className="text-sm opacity-75">다시 시도해주세요</span>
+                    <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
+                    <span className="text-red-600">분석에 실패했습니다</span>
+                    <span className="text-sm opacity-75 text-center">
+                      {errorInfo?.message || "네트워크를 확인하고 다시 시도해주세요"}
+                    </span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -333,7 +439,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     
-                    <div className="space-y-1">
+                    <div className="space-y-1 mb-3">
                       {log.items.map((item, index) => (
                         <div key={index} className="flex justify-between text-sm">
                           <span className="text-gray-700">
@@ -343,6 +449,85 @@ export default function DashboardPage() {
                         </div>
                       ))}
                     </div>
+                    
+                    {/* 영양성분 요약 */}
+                    {log.analysisResult?.summary && (
+                      <div className="border-t border-gray-100 pt-3">
+                        <h4 className="text-xs font-medium text-gray-600 mb-3">5대 영양소</h4>
+                        
+                        {/* 3대 영양소 */}
+                        <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+                          <div className="text-center">
+                            <div className="font-medium text-blue-600">
+                              {Math.round(log.analysisResult.summary.totalCarbohydrates?.value || 0)}
+                              {log.analysisResult.summary.totalCarbohydrates?.unit || 'g'}
+                            </div>
+                            <div className="text-gray-500">탄수화물</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-green-600">
+                              {Math.round(log.analysisResult.summary.totalProtein?.value || 0)}
+                              {log.analysisResult.summary.totalProtein?.unit || 'g'}
+                            </div>
+                            <div className="text-gray-500">단백질</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-yellow-600">
+                              {Math.round(log.analysisResult.summary.totalFat?.value || 0)}
+                              {log.analysisResult.summary.totalFat?.unit || 'g'}
+                            </div>
+                            <div className="text-gray-500">지방</div>
+                          </div>
+                        </div>
+
+                        {/* 비타민 & 무기질 */}
+                        <div className="border-t border-gray-50 pt-2">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                            {/* 비타민 */}
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">비타민C</span>
+                              <span className="font-medium text-orange-600">
+                                {Math.round(log.analysisResult.summary.totalVitaminC?.value || 0)}
+                                {log.analysisResult.summary.totalVitaminC?.unit || 'mg'}
+                              </span>
+                            </div>
+                            
+                            {/* 무기질 */}
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">나트륨</span>
+                              <span className="font-medium text-red-600">
+                                {Math.round(log.analysisResult.summary.totalSodium?.value || 0)}
+                                {log.analysisResult.summary.totalSodium?.unit || 'mg'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">칼슘</span>
+                              <span className="font-medium text-purple-600">
+                                {Math.round(log.analysisResult.summary.totalCalcium?.value || 0)}
+                                {log.analysisResult.summary.totalCalcium?.unit || 'mg'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">철분</span>
+                              <span className="font-medium text-gray-700">
+                                {(log.analysisResult.summary.totalIron?.value || 0).toFixed(1)}
+                                {log.analysisResult.summary.totalIron?.unit || 'mg'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">칼륨</span>
+                              <span className="font-medium text-indigo-600">
+                                {Math.round(log.analysisResult.summary.totalPotassium?.value || 0)}
+                                {log.analysisResult.summary.totalPotassium?.unit || 'mg'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -374,8 +559,10 @@ export default function DashboardPage() {
             transition={{ delay: 0.2 }}
             className="mt-8 bg-emerald-50 rounded-xl p-4"
           >
-            <h3 className="font-semibold text-emerald-900 mb-3">오늘의 요약</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <h3 className="font-semibold text-emerald-900 mb-4">오늘의 요약</h3>
+            
+            {/* 총 칼로리 및 기록 수 */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-emerald-600">
                   {todayTotalCalories}
@@ -389,6 +576,94 @@ export default function DashboardPage() {
                 <div className="text-sm text-emerald-700">기록 수</div>
               </div>
             </div>
+
+            {/* 5대 영양소 요약 */}
+            {(() => {
+              const totalNutrients = foodLogs.reduce((acc, log) => {
+                const summary = log.analysisResult?.summary;
+                if (summary) {
+                  acc.carbs += summary.totalCarbohydrates?.value || 0;
+                  acc.protein += summary.totalProtein?.value || 0;
+                  acc.fat += summary.totalFat?.value || 0;
+                  acc.sodium += summary.totalSodium?.value || 0;
+                  acc.calcium += summary.totalCalcium?.value || 0;
+                  acc.iron += summary.totalIron?.value || 0;
+                  acc.potassium += summary.totalPotassium?.value || 0;
+                  acc.vitaminC += summary.totalVitaminC?.value || 0;
+                }
+                return acc;
+              }, { 
+                carbs: 0, protein: 0, fat: 0, 
+                sodium: 0, calcium: 0, iron: 0, 
+                potassium: 0, vitaminC: 0 
+              });
+
+              // 식단 기록이 있으면 영양소 요약을 항상 표시 (0이어도)
+              return foodLogs.length > 0 ? (
+                <div className="border-t border-emerald-200 pt-4">
+                  <h4 className="text-sm font-medium text-emerald-800 mb-3">5대 영양소 합계</h4>
+                  
+                  {/* 3대 영양소 */}
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <div className="text-lg font-bold text-blue-600">
+                        {Math.round(totalNutrients.carbs)}g
+                      </div>
+                      <div className="text-xs text-gray-600">탄수화물</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <div className="text-lg font-bold text-green-600">
+                        {Math.round(totalNutrients.protein)}g
+                      </div>
+                      <div className="text-xs text-gray-600">단백질</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <div className="text-lg font-bold text-yellow-600">
+                        {Math.round(totalNutrients.fat)}g
+                      </div>
+                      <div className="text-xs text-gray-600">지방</div>
+                    </div>
+                  </div>
+
+                  {/* 비타민 & 무기질 */}
+                  <div className="bg-white rounded-lg p-3">
+                    <h5 className="text-xs font-medium text-gray-700 mb-2">비타민 & 무기질</h5>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">비타민C</span>
+                        <span className="font-medium text-orange-600">
+                          {Math.round(totalNutrients.vitaminC)}mg
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">나트륨</span>
+                        <span className="font-medium text-red-600">
+                          {Math.round(totalNutrients.sodium)}mg
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">칼슘</span>
+                        <span className="font-medium text-purple-600">
+                          {Math.round(totalNutrients.calcium)}mg
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">철분</span>
+                        <span className="font-medium text-gray-700">
+                          {totalNutrients.iron.toFixed(1)}mg
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">칼륨</span>
+                        <span className="font-medium text-indigo-600">
+                          {Math.round(totalNutrients.potassium)}mg
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </motion.div>
         )}
       </main>
