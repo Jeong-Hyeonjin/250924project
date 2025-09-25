@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // n8n 웹훅 URL (추후 환경 변수로 이동 권장: process.env.N8N_WEBHOOK_URL)
-const N8N_WEBHOOK_URL = 'https://hjjeong.app.n8n.cloud/webhook/282fe775-0bdb-433a-968a-c0a79aa90381';
+const N8N_WEBHOOK_URL = 'https://hjjeong.app.n8n.cloud/webhook-test/282fe775-0bdb-433a-968a-c0a79aa90381';
 
 export async function POST(request: NextRequest) {
   try {

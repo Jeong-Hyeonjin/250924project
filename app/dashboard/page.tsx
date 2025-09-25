@@ -286,12 +286,20 @@ export default function DashboardPage() {
                 <CalendarDaysIcon className="w-4 h-4 mr-2" />
                 {selectedDate}
               </Button>
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600">{user.email}</span>
-                <Button variant="outline" size="sm" onClick={handleSignOut}>
-                  로그아웃
-                </Button>
-              </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => router.push('/subscription')}
+                className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
+              >
+                프리미엄
+              </Button>
+              <span className="text-sm text-gray-600">{user.email}</span>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                로그아웃
+              </Button>
+            </div>
             </div>
           </div>
         </div>
